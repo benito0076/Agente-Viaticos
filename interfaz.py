@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import tkinter as tk
 from tkinter import scrolledtext
@@ -18,7 +19,8 @@ ROJO = "#ff4d6d"
 TEXTO = "#cfe8ff"
 FUENTE = ("Consolas", 11)
 
-load_dotenv()
+CARPETA = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
+load_dotenv(os.path.join(CARPETA, ".env"))
 llave = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=llave) if llave else None
 
