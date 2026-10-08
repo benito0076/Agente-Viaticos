@@ -25,6 +25,16 @@ El archivo `.env` está en `.gitignore` y no se sube al repositorio.
 
 ## Uso
 
+### Interfaz gráfica
+
+```powershell
+python interfaz.py
+```
+
+Ventana con estilo futurista (tema oscuro con acentos de neón) hecha con `tkinter`, que ya viene con Python. Escribe tu pregunta y presiona Enter o el botón **ENVIAR**.
+
+### Línea de comandos
+
 ```powershell
 python agente.py "Cuántos planetas hay en el sistema solar?"
 ```
@@ -33,7 +43,7 @@ Si los acentos se ven mal en la consola de Windows, ejecuta antes `$env:PYTHONIO
 
 ## Configuración
 
-En `agente.py` puedes cambiar:
+En `agente.py` e `interfaz.py` puedes cambiar:
 
 - `MODELO`: modelo de Gemini a usar.
 - `INSTRUCCIONES`: instrucción de sistema que define el comportamiento del agente.
