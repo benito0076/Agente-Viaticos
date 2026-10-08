@@ -42,19 +42,12 @@ class Aplicacion(tk.Tk):
         )
         self.estado.pack(pady=(0, 8))
 
-        marco = tk.Frame(self, bg=CIAN, padx=1, pady=1)
-        marco.pack(fill=tk.BOTH, expand=True, padx=14)
-        self.conversacion = scrolledtext.ScrolledText(
-            marco, wrap=tk.WORD, state=tk.DISABLED, font=FUENTE, bg=PANEL, fg=TEXTO,
-            insertbackground=CIAN, relief=tk.FLAT, borderwidth=0, padx=10, pady=8,
-        )
-        self.conversacion.pack(fill=tk.BOTH, expand=True)
-        self.conversacion.tag_config("usuario", foreground=CIAN, font=("Consolas", 11, "bold"))
-        self.conversacion.tag_config("agente", foreground=MAGENTA)
-        self.conversacion.tag_config("error", foreground=ROJO)
-
+        tk.Label(
+            self, text="▸ ESCRIBE TU PREGUNTA", bg=FONDO, fg=MAGENTA,
+            font=("Consolas", 10, "bold"), anchor="w",
+        ).pack(fill=tk.X, padx=14)
         barra = tk.Frame(self, bg=FONDO)
-        barra.pack(fill=tk.X, padx=14, pady=14)
+        barra.pack(fill=tk.X, padx=14, pady=(2, 12))
         marco_entrada = tk.Frame(barra, bg=MAGENTA, padx=1, pady=1)
         marco_entrada.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entrada = tk.Entry(
@@ -72,6 +65,17 @@ class Aplicacion(tk.Tk):
             highlightbackground=CIAN, cursor="hand2",
         )
         self.boton.pack(side=tk.LEFT, padx=(10, 0), ipady=4)
+
+        marco = tk.Frame(self, bg=CIAN, padx=1, pady=1)
+        marco.pack(fill=tk.BOTH, expand=True, padx=14, pady=(0, 14))
+        self.conversacion = scrolledtext.ScrolledText(
+            marco, wrap=tk.WORD, state=tk.DISABLED, font=FUENTE, bg=PANEL, fg=TEXTO,
+            insertbackground=CIAN, relief=tk.FLAT, borderwidth=0, padx=10, pady=8,
+        )
+        self.conversacion.pack(fill=tk.BOTH, expand=True)
+        self.conversacion.tag_config("usuario", foreground=CIAN, font=("Consolas", 11, "bold"))
+        self.conversacion.tag_config("agente", foreground=MAGENTA)
+        self.conversacion.tag_config("error", foreground=ROJO)
 
         if not client:
             self.escribir("ERROR: falta GEMINI_API_KEY en el archivo .env\n", "error")

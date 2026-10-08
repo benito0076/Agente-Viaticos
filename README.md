@@ -33,6 +33,17 @@ python interfaz.py
 
 Ventana con estilo futurista (tema oscuro con acentos de neón) hecha con `tkinter`, que ya viene con Python. Escribe tu pregunta y presiona Enter o el botón **ENVIAR**.
 
+### Ejecutable (.exe)
+
+Para generar un `AgenteViaticos.exe` de la interfaz gráfica (no requiere consola):
+
+```powershell
+pip install pyinstaller
+pyinstaller --onefile --windowed --name AgenteViaticos interfaz.py
+```
+
+El ejecutable queda en `dist/AgenteViaticos.exe`. La llave de API no se incluye dentro del .exe: coloca tu archivo `.env` en la misma carpeta que el ejecutable. Las carpetas `build/` y `dist/` están en `.gitignore`, así que el .exe no se sube al repositorio.
+
 ### Línea de comandos
 
 ```powershell
