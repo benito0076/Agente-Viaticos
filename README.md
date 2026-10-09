@@ -33,6 +33,10 @@ python interfaz.py
 
 Ventana con estilo futurista (tema oscuro con acentos de neón) hecha con `tkinter`, que ya viene con Python. Escribe tu pregunta y presiona Enter o el botón **ENVIAR**.
 
+Es un chat de varios turnos: el agente recuerda lo dicho antes en la misma conversación (guarda el ID de la interacción anterior y lo envía como `previous_interaction_id`). El botón **NUEVO ↺** borra el panel y empieza una conversación desde cero.
+
+La línea de comandos (`agente.py`) responde una sola pregunta por ejecución, sin memoria.
+
 ### Ejecutable (.exe)
 
 Para generar un `AgenteViaticos.exe` de la interfaz gráfica (no requiere consola):
