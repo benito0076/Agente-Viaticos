@@ -37,6 +37,7 @@ class Aplicacion(tk.Tk):
         self.geometry("620x520")
         self.minsize(420, 340)
         self.configure(bg=FONDO)
+        self.ultima_interaccion = None
 
         tk.Label(
             self, text="◢ AGENTE VIÁTICOS ◣", bg=FONDO, fg=CIAN,
@@ -70,6 +71,13 @@ class Aplicacion(tk.Tk):
             highlightbackground=CIAN, cursor="hand2",
         )
         self.boton.pack(side=tk.LEFT, padx=(10, 0), ipady=4)
+        self.boton_nuevo = tk.Button(
+            barra, text="NUEVO ↺", command=self.nueva_conversacion, font=("Consolas", 11, "bold"),
+            bg=FONDO, fg=MAGENTA, activebackground=MAGENTA, activeforeground=FONDO,
+            disabledforeground="#5a3a55", relief=tk.FLAT, highlightthickness=1,
+            highlightbackground=MAGENTA, cursor="hand2",
+        )
+        self.boton_nuevo.pack(side=tk.LEFT, padx=(8, 0), ipady=4)
 
         marco = tk.Frame(self, bg=CIAN, padx=1, pady=1)
         marco.pack(fill=tk.BOTH, expand=True, padx=14, pady=(0, 14))
@@ -103,23 +111,37 @@ class Aplicacion(tk.Tk):
         self.entrada.delete(0, tk.END)
         self.escribir(f"> {pregunta}\n", "usuario")
         self.boton.config(state=tk.DISABLED, text="PROCESANDO…")
+        self.boton_nuevo.config(state=tk.DISABLED)
         self.estado.config(text="● PROCESANDO", fg=MAGENTA)
         threading.Thread(target=self.consultar, args=(pregunta,), daemon=True).start()
 
     def consultar(self, pregunta):
         try:
+            datos = {}
+            if self.ultima_interaccion:
+                datos["previous_interaction_id"] = self.ultima_interaccion
             interaccion = client.interactions.create(
                 model=MODELO,
                 input=pregunta,
                 system_instruction=INSTRUCCIONES,
+                **datos,
             )
+            self.ultima_interaccion = interaccion.id
             self.after(0, self.mostrar, f"[AGENTE] {interaccion.output_text}\n\n", "agente")
         except Exception as error:
             self.after(0, self.mostrar, f"[ERROR] {error}\n\n", "error")
 
+    def nueva_conversacion(self):
+        self.ultima_interaccion = None
+        self.conversacion.config(state=tk.NORMAL)
+        self.conversacion.delete("1.0", tk.END)
+        self.conversacion.config(state=tk.DISABLED)
+        self.entrada.focus_set()
+
     def mostrar(self, texto, etiqueta):
         self.escribir(texto, etiqueta)
         self.boton.config(state=tk.NORMAL, text="ENVIAR ▶")
+        self.boton_nuevo.config(state=tk.NORMAL)
         self.estado.config(text="● SISTEMA EN LÍNEA", fg=VERDE)
         self.entrada.focus_set()
 
