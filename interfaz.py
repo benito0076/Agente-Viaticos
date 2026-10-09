@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from google import genai
 
 MODELO = "gemini-3.5-flash-lite"
-INSTRUCCIONES = "Responde siempre como cavernicola y en máximo tres frases"
 
 FONDO = "#05070f"
 PANEL = "#0b1020"
@@ -20,7 +19,13 @@ TEXTO = "#cfe8ff"
 FUENTE = ("Consolas", 11)
 
 CARPETA = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
+RUTA_INSTRUCCIONES = os.path.join(CARPETA, "prompts", "sistema.md")
 load_dotenv(os.path.join(CARPETA, ".env"))
+try:
+    with open(RUTA_INSTRUCCIONES, encoding="utf-8") as archivo:
+        INSTRUCCIONES = archivo.read().strip()
+except OSError:
+    INSTRUCCIONES = None
 llave = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=llave) if llave else None
 
@@ -77,8 +82,11 @@ class Aplicacion(tk.Tk):
         self.conversacion.tag_config("agente", foreground=MAGENTA)
         self.conversacion.tag_config("error", foreground=ROJO)
 
-        if not client:
-            self.escribir("ERROR: falta GEMINI_API_KEY en el archivo .env\n", "error")
+        if not client or not INSTRUCCIONES:
+            if not client:
+                self.escribir("ERROR: falta GEMINI_API_KEY en el archivo .env\n", "error")
+            if not INSTRUCCIONES:
+                self.escribir(f"ERROR: no se pudo leer {RUTA_INSTRUCCIONES}\n", "error")
             self.estado.config(text="● SISTEMA FUERA DE LÍNEA", fg=ROJO)
             self.boton.config(state=tk.DISABLED)
 

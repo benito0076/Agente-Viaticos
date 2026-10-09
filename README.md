@@ -1,6 +1,6 @@
 # Agente Viáticos
 
-Agente de línea de comandos en Python que envía una pregunta a Gemini (`google-genai`) y muestra la respuesta. Por ahora responde como cavernícola en máximo tres frases; es la base para un agente de viáticos.
+Agente de línea de comandos en Python que envía una pregunta a Gemini (`google-genai`) y muestra la respuesta. Se comporta como asistente de recursos humanos para viáticos, según las instrucciones del archivo `prompts/sistema.md`.
 
 ## Requisitos
 
@@ -42,7 +42,7 @@ pip install pyinstaller
 pyinstaller --onefile --windowed --name AgenteViaticos interfaz.py
 ```
 
-El ejecutable queda en `dist/AgenteViaticos.exe`. La llave de API no se incluye dentro del .exe: coloca tu archivo `.env` en la misma carpeta que el ejecutable. Las carpetas `build/` y `dist/` están en `.gitignore`, así que el .exe no se sube al repositorio.
+El ejecutable queda en `dist/AgenteViaticos.exe`. La llave de API no se incluye dentro del .exe: coloca tu archivo `.env` y la carpeta `prompts/` (con `sistema.md`) en la misma carpeta que el ejecutable. Las carpetas `build/` y `dist/` están en `.gitignore`, así que el .exe no se sube al repositorio.
 
 ### Línea de comandos
 
@@ -54,7 +54,5 @@ Si los acentos se ven mal en la consola de Windows, ejecuta antes `$env:PYTHONIO
 
 ## Configuración
 
-En `agente.py` e `interfaz.py` puedes cambiar:
-
-- `MODELO`: modelo de Gemini a usar.
-- `INSTRUCCIONES`: instrucción de sistema que define el comportamiento del agente.
+- **Instrucciones del agente:** edita `prompts/sistema.md` (rol, tarifas de alimentación y hotel, tono). Se lee al iniciar, así que no hay que tocar el código. Si el archivo falta, el agente muestra un error. Con el .exe, la carpeta `prompts/` debe estar junto al ejecutable.
+- **Modelo:** cambia `MODELO` en `agente.py` e `interfaz.py`.
