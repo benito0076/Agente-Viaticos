@@ -1,5 +1,4 @@
 import os
-import sys
 import threading
 import tkinter as tk
 from tkinter import scrolledtext
@@ -7,7 +6,7 @@ from tkinter import scrolledtext
 from dotenv import load_dotenv
 from google import genai
 
-MODELO = "gemini-3.5-flash-lite"
+from agente import CARPETA, RUTA_INSTRUCCIONES, cargar_instrucciones, responder
 
 FONDO = "#05070f"
 PANEL = "#0b1020"
@@ -18,12 +17,9 @@ ROJO = "#ff4d6d"
 TEXTO = "#cfe8ff"
 FUENTE = ("Consolas", 11)
 
-CARPETA = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
-RUTA_INSTRUCCIONES = os.path.join(CARPETA, "prompts", "sistema.md")
 load_dotenv(os.path.join(CARPETA, ".env"))
 try:
-    with open(RUTA_INSTRUCCIONES, encoding="utf-8") as archivo:
-        INSTRUCCIONES = archivo.read().strip()
+    INSTRUCCIONES = cargar_instrucciones()
 except OSError:
     INSTRUCCIONES = None
 llave = os.getenv("GEMINI_API_KEY")
@@ -88,13 +84,14 @@ class Aplicacion(tk.Tk):
         self.conversacion.pack(fill=tk.BOTH, expand=True)
         self.conversacion.tag_config("usuario", foreground=CIAN, font=("Consolas", 11, "bold"))
         self.conversacion.tag_config("agente", foreground=MAGENTA)
+        self.conversacion.tag_config("herramienta", foreground=VERDE)
         self.conversacion.tag_config("error", foreground=ROJO)
 
         if not client or not INSTRUCCIONES:
             if not client:
                 self.escribir("ERROR: falta GEMINI_API_KEY en el archivo .env\n", "error")
             if not INSTRUCCIONES:
-                self.escribir(f"ERROR: no se pudo leer {RUTA_INSTRUCCIONES}\n", "error")
+                self.escribir(f"ERROR: no se pudo leer {RUTA_INSTRUCCIONES} o la carpeta conocimientos\n", "error")
             self.estado.config(text="● SISTEMA FUERA DE LÍNEA", fg=ROJO)
             self.boton.config(state=tk.DISABLED)
 
@@ -117,17 +114,11 @@ class Aplicacion(tk.Tk):
 
     def consultar(self, pregunta):
         try:
-            datos = {}
-            if self.ultima_interaccion:
-                datos["previous_interaction_id"] = self.ultima_interaccion
-            interaccion = client.interactions.create(
-                model=MODELO,
-                input=pregunta,
-                system_instruction=INSTRUCCIONES,
-                **datos,
+            texto, self.ultima_interaccion = responder(
+                client, INSTRUCCIONES, pregunta, self.ultima_interaccion,
+                traza=lambda linea: self.after(0, self.escribir, linea + "\n", "herramienta"),
             )
-            self.ultima_interaccion = interaccion.id
-            self.after(0, self.mostrar, f"[AGENTE] {interaccion.output_text}\n\n", "agente")
+            self.after(0, self.mostrar, f"[AGENTE] {texto}\n\n", "agente")
         except Exception as error:
             self.after(0, self.mostrar, f"[ERROR] {error}\n\n", "error")
 

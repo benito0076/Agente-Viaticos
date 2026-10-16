@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from google import genai
 
 MODELO = "gemini-3.5-flash-lite"
-CARPETA = os.path.dirname(os.path.abspath(__file__))
+CARPETA = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 RUTA_INSTRUCCIONES = os.path.join(CARPETA, "prompts", "sistema.md")
 RUTA_CONOCIMIENTO = os.path.join(CARPETA, "conocimientos")
 RUTA_GASTOS = os.path.join(RUTA_CONOCIMIENTO, "gastos.csv")
@@ -82,53 +82,59 @@ HERRAMIENTAS = [
     },
 ]
 
-load_dotenv()
-try:
+
+def cargar_instrucciones():
     with open(RUTA_INSTRUCCIONES, encoding="utf-8") as archivo:
-        INSTRUCCIONES = archivo.read().strip()
+        instrucciones = archivo.read().strip()
     documentos = []
     for nombre in sorted(os.listdir(RUTA_CONOCIMIENTO)):
         ruta = os.path.join(RUTA_CONOCIMIENTO, nombre)
         if os.path.isfile(ruta) and nombre.endswith(".md"):
             with open(ruta, encoding="utf-8") as archivo:
                 documentos.append(f'<documento nombre="{nombre}">\n{archivo.read().strip()}\n</documento>')
-    INSTRUCCIONES += "\n\n" + "\n\n".join(documentos)
-except OSError as error:
-    sys.exit(f"No se pudo leer un archivo del agente: {error}")
-llave = os.getenv("GEMINI_API_KEY")
-if not llave:
-    sys.exit("Falta GEMINI_API_KEY en el archivo .env")
-if len(sys.argv) < 2:
-    sys.exit('Uso: python agente.py "tu pregunta"')
+    return instrucciones + "\n\n" + "\n\n".join(documentos)
 
-client = genai.Client(api_key=llave)
-entrada = " ".join(sys.argv[1:])
-previa = None
-for _ in range(MAX_VUELTAS):
-    interaccion = client.interactions.create(
-        model=MODELO,
-        input=entrada,
-        system_instruction=INSTRUCCIONES,
-        tools=HERRAMIENTAS,
-        previous_interaction_id=previa,
-    )
-    llamadas = [paso for paso in interaccion.steps if paso.type == "function_call"]
-    if not llamadas:
-        print(interaccion.output_text)
-        break
-    entrada = []
-    for llamada in llamadas:
-        try:
-            resultado = FUNCIONES[llamada.name](**llamada.arguments)
-        except Exception as error:
-            resultado = {"error": str(error)}
-        print(f"[HERRAMIENTA] {llamada.name}({llamada.arguments}) -> {resultado}")
-        entrada.append({
-            "type": "function_result",
-            "name": llamada.name,
-            "call_id": llamada.id,
-            "result": [{"type": "text", "text": json.dumps(resultado, ensure_ascii=False)}],
-        })
-    previa = interaccion.id
-else:
-    sys.exit(f"El modelo no respondió con texto tras {MAX_VUELTAS} vueltas.")
+
+def responder(client, instrucciones, pregunta, previa=None, traza=print):
+    """Ejecuta el ciclo de herramientas; devuelve (texto, id de la interacción)."""
+    entrada = pregunta
+    for _ in range(MAX_VUELTAS):
+        interaccion = client.interactions.create(
+            model=MODELO,
+            input=entrada,
+            system_instruction=instrucciones,
+            tools=HERRAMIENTAS,
+            previous_interaction_id=previa,
+        )
+        llamadas = [paso for paso in interaccion.steps if paso.type == "function_call"]
+        if not llamadas:
+            return interaccion.output_text, interaccion.id
+        entrada = []
+        for llamada in llamadas:
+            try:
+                resultado = FUNCIONES[llamada.name](**llamada.arguments)
+            except Exception as error:
+                resultado = {"error": str(error)}
+            traza(f"[HERRAMIENTA] {llamada.name}({llamada.arguments}) -> {resultado}")
+            entrada.append({
+                "type": "function_result",
+                "name": llamada.name,
+                "call_id": llamada.id,
+                "result": [{"type": "text", "text": json.dumps(resultado, ensure_ascii=False)}],
+            })
+        previa = interaccion.id
+    raise RuntimeError(f"El modelo no respondió con texto tras {MAX_VUELTAS} vueltas.")
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    llave = os.getenv("GEMINI_API_KEY")
+    if not llave:
+        sys.exit("Falta GEMINI_API_KEY en el archivo .env")
+    if len(sys.argv) < 2:
+        sys.exit('Uso: python agente.py "tu pregunta"')
+    try:
+        instrucciones = cargar_instrucciones()
+        print(responder(genai.Client(api_key=llave), instrucciones, " ".join(sys.argv[1:]))[0])
+    except (OSError, RuntimeError) as error:
+        sys.exit(f"No se pudo completar la consulta: {error}")
